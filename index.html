@@ -3,101 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQUAD CHAT</title>
+    <title>AI Voice Chat (HF Space)</title>
     <style>
-        body { background-color: #121212; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 10px 15px; border-radius: 15px; position: relative; animation: fadeIn 0.3s ease; }
-        .message.user { align-self: flex-end; background-color: #0088cc; color: white; border-bottom-right-radius: 2px; }
-        .message.bot { align-self: flex-start; background-color: #2c2c2c; border-bottom-left-radius: 2px; }
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #chat-container {
+            width: 90%;
+            max-width: 600px;
+            height: 70vh;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message.user {
+            background-color: #2b5c8a;
+            align-self: flex-end;
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.bot {
+            background-color: #2e7d32;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+        .char-name {
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-bottom: 3px;
+            display: block;
+            color: #aaa;
+        }
+        #controls {
+            display: flex;
+            gap: 10px;
+            width: 90%;
+            max-width: 600px;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        #send-btn { background-color: #007bff; color: white; }
+        #send-btn:hover { background-color: #0056b3; }
+        #auto-btn { background-color: #dc3545; color: white; }
+        #auto-btn:hover { background-color: #a71d2a; }
         
-        .bot-name { font-weight: bold; font-size: 0.9em; margin-bottom: 5px; display: block; }
-        .Max { color: #ff5555; }
-        .Liza { color: #ff79c6; }
-        .Dan { color: #50fa7b; }
-        .Vika { color: #bd93f9; }
-
-        .input-area { padding: 20px; background-color: #1e1e1e; display: flex; gap: 10px; }
-        input { flex: 1; padding: 10px; border-radius: 20px; border: none; background: #333; color: white; outline: none; }
-        button { padding: 10px 20px; border-radius: 20px; border: none; background: #0088cc; color: white; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #006699; }
-        button:disabled { background: #444; cursor: wait; }
-
-        #config-panel { padding: 10px; background: #222; text-align: center; border-bottom: 1px solid #444; }
-        #ngrok-url { width: 300px; padding: 5px; background: #333; border: 1px solid #555; color: #fff; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Индикатор загрузки */
+        .loading { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<div id="config-panel">
-    🔗 Ссылка Ngrok: <input type="text" id="ngrok-url" placeholder="https://xxxx.ngrok-free.app">
-</div>
+    <div id="chat-container"></div>
 
-<div class="chat-container" id="chat">
-    <div class="message bot"><span class="bot-name Max">System</span>Вставьте ссылку из Colab и пишите!</div>
-</div>
+    <div id="controls">
+        <input type="text" id="user-input" placeholder="Напишите сообщение (например: Привет, Папич!)">
+        <button id="send-btn">Отправить</button>
+        <button id="auto-btn">Авто-диалог</button>
+    </div>
 
-<div class="input-area">
-    <input type="text" id="message-input" placeholder="Напишите сообщение..." onkeypress="handleEnter(event)">
-    <button onclick="sendMessage()" id="send-btn">Send</button>
-</div>
+    <script>
+        // ВАША ССЫЛКА НА СЕРВЕР HUGGING FACE
+        // Важно: без слеша в конце
+        const API_URL = "https://bizneslife-voicebot.hf.space"; 
 
-<script>
-    async function sendMessage() {
-        const input = document.getElementById('message-input');
-        const text = input.value.trim();
-        const url = document.getElementById('ngrok-url').value.replace(/\/$/, ''); // Убираем слеш в конце
-        const chat = document.getElementById('chat');
-        const btn = document.getElementById('send-btn');
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const autoBtn = document.getElementById('auto-btn');
 
-        if (!text || !url) return alert("Введите текст и ссылку Ngrok!");
+        // Функция отправки сообщения
+        async function sendMessage(text, isAuto = false) {
+            if (!text && !isAuto) return;
 
-        // 1. Рисуем сообщение юзера
-        chat.innerHTML += `<div class="message user">${text}</div>`;
-        input.value = '';
-        chat.scrollTop = chat.scrollHeight;
-        btn.disabled = true;
-
-        try {
-            const response = await fetch(`${url}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, character: "Squad" })
-            });
-
-            if (!response.ok) throw new Error("Ошибка сервера");
-
-            const data = await response.json();
-
-            // 2. Если пришли ответы (массив)
-            if (data.responses) {
-                for (const reply of data.responses) {
-                    // Задержка для реализма
-                    await new Promise(r => setTimeout(r, 1000));
-                    
-                    const audioId = `audio-${Date.now()}-${Math.random()}`;
-                    chat.innerHTML += `
-                        <div class="message bot">
-                            <span class="bot-name ${reply.character}">${reply.character}</span>
-                            ${reply.text}
-                            <audio id="${audioId}" src="${url}${reply.audio_url}" autoplay style="display:none"></audio>
-                        </div>
-                    `;
-                    chat.scrollTop = chat.scrollHeight;
-                }
+            if (!isAuto) {
+                addMessage("Вы", text, "user");
+                userInput.value = "";
             }
-        } catch (e) {
-            chat.innerHTML += `<div class="message bot" style="color:red">Ошибка: ${e.message}</div>`;
+
+            setLoading(true);
+
+            try {
+                const endpoint = isAuto ? "/auto_chat" : "/chat";
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) throw new Error("Ошибка сервера");
+
+                const data = await response.json();
+                
+                // Обрабатываем ответы ботов
+                for (const item of data.responses) {
+                    addMessage(item.character, item.text, "bot");
+                    
+                    // Воспроизводим аудио
+                    if (item.audio_url) {
+                        // Hugging Face требует полный путь, если сервер возвращает относительный
+                        const audioLink = item.audio_url.startsWith("http") 
+                            ? item.audio_url 
+                            : `${API_URL}${item.audio_url}`;
+                            
+                        const audio = new Audio(audioLink);
+                        audio.play().catch(e => console.error("Ошибка аудио:", e));
+                    }
+                }
+
+            } catch (error) {
+                console.error(error);
+                addMessage("System", "Ошибка соединения с сервером Hugging Face. Проверьте консоль.", "bot");
+            } finally {
+                setLoading(false);
+            }
         }
-        btn.disabled = false;
-    }
 
-    function handleEnter(e) {
-        if (e.key === 'Enter') sendMessage();
-    }
-</script>
+        function addMessage(name, text, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = `<span class="char-name">${name}</span>${text}`;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
 
+        function setLoading(isLoading) {
+            if (isLoading) {
+                sendBtn.classList.add("loading");
+                sendBtn.textContent = "...";
+            } else {
+                sendBtn.classList.remove("loading");
+                sendBtn.textContent = "Отправить";
+            }
+        }
+
+        sendBtn.addEventListener('click', () => sendMessage(userInput.value));
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage(userInput.value);
+        });
+        
+        autoBtn.addEventListener('click', () => sendMessage("", true));
+
+    </script>
 </body>
 </html>
