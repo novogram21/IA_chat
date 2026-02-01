@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат с Пуджом и Сидоровичем</title>
+    <style>
+        body { background: #121212; color: #fff; font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        #setup { background: #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        input[type="text"] { width: 70%; padding: 10px; background: #222; border: 1px solid #555; color: #fff; }
+        button { padding: 10px 20px; cursor: pointer; background: #4CAF50; color: white; border: none; font-weight: bold; }
+        .chat-container { display: flex; flex-direction: column; gap: 10px; height: 400px; overflow-y: auto; border: 1px solid #333; padding: 10px; border-radius: 8px; }
+        .message { padding: 10px; border-radius: 8px; max-width: 80%; }
+        .user { align-self: flex-end; background: #007bff; }
+        .pudge { align-self: flex-start; background: #8b0000; border-left: 4px solid red; }
+        .sidor { align-self: flex-start; background: #556b2f; border-left: 4px solid lime; }
+    </style>
+</head>
+<body>
+
+    <!-- ВАЖНО: Сюда вставлять ссылку из Colab -->
+    <div id="setup">
+        <label>🔗 Ссылка Ngrok из Colab:</label>
+        <div style="display:flex; gap:10px; margin-top:5px;">
+            <input type="text" id="apiUrl" placeholder="https://....ngrok-free.app">
+            <button onclick="saveUrl()">Подключить</button>
+        </div>
+        <small style="color:#aaa;">Копируйте ссылку из вывода Colab каждый раз при запуске</small>
+    </div>
+
+    <div class="chat-container" id="chat">
+        <!-- Сообщения появятся тут -->
+    </div>
+
+    <div style="margin-top: 15px; display:flex; gap:10px;">
+        <input type="text" id="userMsg" placeholder="Напиши что-нибудь...">
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
+
+    <script>
+        let BACKEND_URL = localStorage.getItem("colab_url") || "";
+        if(BACKEND_URL) document.getElementById("apiUrl").value = BACKEND_URL;
+
+        function saveUrl() {
+            let url = document.getElementById("apiUrl").value.trim();
+            // Убираем слеш в конце если есть
+            if(url.endsWith("/")) url = url.slice(0, -1);
+            localStorage.setItem("colab_url", url);
+            BACKEND_URL = url;
+            alert("Ссылка сохранена! Можно чатиться.");
+        }
+
+        async function sendMessage() {
+            if (!BACKEND_URL) return alert("Сначала вставьте ссылку из Colab!");
+            
+            let text = document.getElementById("userMsg").value;
+            if (!text) return;
+
+            addMessage("Вы", text, "user");
+            document.getElementById("userMsg").value = "";
+
+            // 1. Спрашиваем Пуджа
+            await callCharacter("Pudge", text);
+            
+            // 2. Спрашиваем Сидоровича (пусть реагирует на ответ Пуджа, но упростим для скорости - пусть реагирует на вас)
+            // В идеале можно передать историю, но для примера просто еще запрос
+            await callCharacter("Sidor", "Покупатель сказал: " + text);
+        }
+
+        async function callCharacter(charName, prompt) {
+            try {
+                // Показываем "печатает..."
+                let loadingId = addMessage(charName, "...", charName.toLowerCase());
+                
+                let response = await fetch(`${BACKEND_URL}/chat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: prompt, character: charName })
+                });
+
+                if (!response.ok) throw new Error("Ошибка сети");
+                
+                let data = await response.json();
+                
+                // Заменяем "..." на текст
+                document.getElementById(loadingId).innerHTML = `<strong>${charName}:</strong> ${data.text}`;
+                
+                // Играем звук
+                let audio = new Audio(`${BACKEND_URL}${data.audio_url}`);
+                audio.play();
+
+            } catch (e) {
+                alert("Ошибка! Проверьте ссылку Ngrok. " + e);
+            }
+        }
+
+        function addMessage(name, text, cls) {
+            let id = "msg-" + Math.random().toString(36).substr(2, 9);
+            let div = document.createElement("div");
+            div.id = id;
+            div.className = `message ${cls}`;
+            div.innerHTML = `<strong>${name}:</strong> ${text}`;
+            let chat = document.getElementById("chat");
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            return id;
+        }
+    </script>
+</body>
+</html>
