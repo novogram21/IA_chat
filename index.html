@@ -1,139 +1,204 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<style>
-    /* Основные стили страницы */
-    body {
-        background-color: #1a1a1a; /* Темный фон как в игре */
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        color: white;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squad Chat AI</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #1e1e1e; margin: 0; color: white; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Заголовок */
+        header { background-color: #252526; padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; }
+        header h1 { margin: 0; font-size: 18px; }
+        header .status { font-size: 12px; color: #aaa; }
+        
+        /* Настройка сервера */
+        #server-config {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        #server-config input { padding: 10px; width: 300px; border-radius: 5px; border: none; margin-bottom: 10px; }
+        #server-config button { padding: 10px 20px; background: #007acc; color: white; border: none; border-radius: 5px; cursor: pointer; }
 
-    /* Контейнер для всей панели */
-    .game-ui {
-        display: flex;
-        gap: 20px;
-    }
+        /* Чат */
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        
+        .message { display: flex; gap: 10px; max-width: 80%; }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.bot { align-self: flex-start; }
+        
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; flex-shrink: 0; }
+        
+        /* Цвета аватарок */
+        .avatar.Max { background: #e74c3c; } /* Красный */
+        .avatar.Liza { background: #9b59b6; } /* Фиолетовый */
+        .avatar.Dan { background: #3498db; } /* Синий */
+        .avatar.Vika { background: #e67e22; } /* Оранжевый */
+        .avatar.User { background: #2ecc71; } /* Зеленый */
 
-    /* Левая колонка (маленькие карточки) */
-    .sidebar {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        width: 200px;
-    }
+        .bubble { background-color: #333; padding: 10px 15px; border-radius: 12px; position: relative; }
+        .message.user .bubble { background-color: #005a9e; }
+        
+        .name { font-size: 12px; color: #bbb; margin-bottom: 4px; display: block; }
+        .text { font-size: 15px; line-height: 1.4; }
+        
+        .audio-player { margin-top: 8px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 20px; width: fit-content; cursor: pointer; transition: 0.2s; }
+        .audio-player:hover { background: rgba(255,255,255,0.1); }
+        .play-icon { font-size: 12px; }
 
-    /* Стиль для серых карточек */
-    .card {
-        background-color: #2d2d35; /* Цвет панелей Roblox */
-        border: 2px solid #4a4a55;
-        border-radius: 5px;
-        padding: 15px;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
+        /* Поле ввода */
+        #input-area { background-color: #252526; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #333; }
+        #message-input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #444; background: #1e1e1e; color: white; outline: none; }
+        #send-btn { background: #007acc; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        #send-btn:disabled { background: #444; cursor: not-allowed; }
 
-    /* Большая панель справа */
-    .main-panel {
-        width: 450px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Заголовки и тексты */
-    h2 { margin: 0 0 15px 0; font-size: 24px; font-weight: normal; }
-    .stat-value { font-size: 32px; font-weight: bold; margin: 5px 0; }
-    .highlight { color: #aaddff; } /* Голубоватый оттенок цифр */
-
-    /* Список дебаффов */
-    .debuff-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-        background: rgba(0,0,0,0.2);
-        padding: 8px;
-        border-radius: 4px;
-    }
-
-    .debuff-name {
-        font-size: 20px;
-        color: #44ff44; /* Ярко-зеленый текст */
-        font-weight: bold;
-    }
-
-    /* Кнопки статусов (Красные) */
-    .status-badge {
-        background-color: #cc0000;
-        color: black;
-        font-weight: bold;
-        padding: 5px 15px;
-        border-radius: 4px;
-        text-transform: uppercase;
-        font-size: 14px;
-        min-width: 100px;
-        text-align: center;
-    }
-    
-    .status-badge.green {
-        background-color: #00cc00;
-    }
-
-</style>
+        .typing { font-size: 12px; color: #888; margin-left: 60px; display: none; }
+    </style>
 </head>
 <body>
 
-<div class="game-ui">
-    <!-- Левая колонка со статистикой -->
-    <div class="sidebar">
-        <div class="card">
-            <div>Уровень коррупции:</div>
-            <div class="stat-value highlight">98.5%</div>
-        </div>
-        
-        <div class="card">
-            <div>Активные трещины:</div>
-            <div class="stat-value highlight">6</div>
-        </div>
-
-        <div class="card" style="border-color: #00ff00;">
-            <div style="color: #00ff00; font-weight: bold;">POISON SPORES</div>
-            <div class="status-badge green" style="margin-top: 5px;">Не обнаружено</div>
-        </div>
+    <!-- Экран подключения -->
+    <div id="server-config">
+        <h2>Настройка связи</h2>
+        <p style="color:#aaa; font-size: 14px; margin-bottom: 20px;">Вставь ссылку из Colab (например: https://xxxx.ngrok-free.app)</p>
+        <input type="text" id="ngrok-url" placeholder="Вставь URL сюда...">
+        <button onclick="connectServer()">Подключиться</button>
     </div>
 
-    <!-- Правая панель с дебаффами -->
-    <div class="card main-panel">
-        <h2>Статус дебаффа</h2>
-        
-        <div class="debuff-row">
-            <span class="debuff-name">Голодный олень</span>
-            <span class="status-badge">Обнаружено</span>
+    <!-- Основной чат -->
+    <header>
+        <div class="avatar" style="background: #555;">S</div>
+        <div>
+            <h1>Squad Chat</h1>
+            <div class="status">4 участника • онлайн</div>
         </div>
+    </header>
 
-        <div class="debuff-row">
-            <span class="debuff-name">Пассивное исцеление</span>
-            <span class="status-badge">PREVENTED</span>
-        </div>
-
-        <div class="debuff-row">
-            <span class="debuff-name">Волны культа</span>
-            <span class="status-badge">EXTREME</span>
-        </div>
-        
-        <div class="debuff-row">
-            <div style="display:flex; flex-direction:column;">
-                 <span class="debuff-name" style="font-size:16px;">Споры гниения</span>
-                 <span style="font-size:12px; color:#aaa;">(Порча еды)</span>
+    <div id="chat-container">
+        <!-- Сообщения появятся здесь -->
+        <div class="message bot">
+            <div class="avatar Max">M</div>
+            <div class="bubble">
+                <span class="name">Max</span>
+                <span class="text">Йоу, че кого? Есть темки?</span>
             </div>
-            <span class="status-badge">Обнаружено</span>
         </div>
     </div>
-</div>
 
+    <div class="typing" id="typing-indicator">Кто-то печатает...</div>
+
+    <div id="input-area">
+        <input type="text" id="message-input" placeholder="Написать сообщение..." onkeypress="handleEnter(event)">
+        <button id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <script>
+        let API_URL = "";
+
+        // Восстанавливаем сохраненный URL если есть
+        if(localStorage.getItem('squad_api_url')) {
+            document.getElementById('ngrok-url').value = localStorage.getItem('squad_api_url');
+        }
+
+        function connectServer() {
+            let url = document.getElementById('ngrok-url').value.trim();
+            if (!url) return alert("Вставь ссылку!");
+            
+            // Убираем слеш в конце если есть
+            if(url.endsWith('/')) url = url.slice(0, -1);
+            
+            API_URL = url;
+            localStorage.setItem('squad_api_url', API_URL);
+            document.getElementById('server-config').style.display = 'none';
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. Показываем сообщение пользователя
+            addMessage("User", text, "User");
+            input.value = "";
+            
+            // Блокируем кнопку
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true;
+            document.getElementById('typing-indicator').style.display = 'block';
+
+            try {
+                // 2. Отправляем на сервер
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, character: "Squad" })
+                });
+
+                const data = await response.json();
+
+                // 3. Показываем ответы ботов
+                if (data.responses && data.responses.length > 0) {
+                    // Добавляем задержку для реалистичности
+                    for (const reply of data.responses) {
+                        await new Promise(r => setTimeout(r, 800)); // Пауза между сообщениями
+                        addMessage(reply.character, reply.text, reply.character, reply.audio_url);
+                    }
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка связи с сервером! Проверь ссылку ngrok.");
+                document.getElementById('server-config').style.display = 'flex';
+            } finally {
+                btn.disabled = false;
+                document.getElementById('typing-indicator').style.display = 'none';
+            }
+        }
+
+        function addMessage(name, text, role, audioUrl = null) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            
+            const isUser = role === "User";
+            div.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            // Первая буква имени для аватарки
+            const initial = name.charAt(0);
+            
+            // Кнопка аудио (если есть)
+            let audioHtml = "";
+            if (audioUrl) {
+                const fullAudioUrl = `${API_URL}${audioUrl}`;
+                audioHtml = `
+                    <div class="audio-player" onclick="playAudio('${fullAudioUrl}', this)">
+                        <span class="play-icon">▶</span> 
+                        <span style="font-size:12px;">Голос</span>
+                    </div>
+                `;
+            }
+
+            div.innerHTML = `
+                <div class="avatar ${role}">${initial}</div>
+                <div class="bubble">
+                    ${!isUser ? `<span class="name">${name}</span>` : ''}
+                    <span class="text">${text}</span>
+                    ${audioHtml}
+                </div>
+            `;
+            
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function playAudio(url, element) {
+            const audio = new Audio(url);
+            audio.play();
+            element.style.color = "#4caf50"; // Зеленеет когда играет
+        }
+    </script>
 </body>
 </html>
