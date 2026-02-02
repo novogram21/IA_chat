@@ -1,152 +1,139 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQUAD AUTO</title>
-    <style>
-        body { background: #111b21; color: #e9edef; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        
-        /* Header */
-        #header { padding: 10px 16px; background: #202c33; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a3942; }
-        #status { font-size: 13px; color: #8696a0; }
-        .online { color: #25d366; font-weight: bold; }
-        
-        /* Config Input (Hidden by default or small) */
-        #ngrok-url { background: #2a3942; border: 1px solid #374045; color: #8696a0; padding: 4px 8px; border-radius: 4px; width: 150px; font-size: 11px; }
+<style>
+    /* Основные стили страницы */
+    body {
+        background-color: #1a1a1a; /* Темный фон как в игре */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: white;
+    }
 
-        /* Chat Area */
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); opacity: 0.95; }
-        
-        .msg { max-width: 65%; padding: 6px 9px; border-radius: 8px; font-size: 14.2px; line-height: 19px; position: relative; box-shadow: 0 1px 0.5px rgba(11,20,26,.13); word-wrap: break-word; }
-        .user { align-self: flex-end; background: #005c4b; color: #e9edef; border-radius: 8px 0 8px 8px; }
-        .bot { align-self: flex-start; background: #202c33; color: #e9edef; border-radius: 0 8px 8px 8px; }
-        
-        .name { font-size: 12.5px; font-weight: 500; margin-bottom: 2px; display: block; line-height: 15px; }
-        .Max { color: #f25c54; } .Liza { color: #ff70a6; } .Dan { color: #70d6ff; } .Vika { color: #e7c6ff; }
+    /* Контейнер для всей панели */
+    .game-ui {
+        display: flex;
+        gap: 20px;
+    }
 
-        /* Controls */
-        #input-area { padding: 10px 16px; background: #202c33; display: flex; gap: 10px; align-items: center; }
-        
-        /* Switch */
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin-right: 10px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374045; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #00a884; }
-        input:checked + .slider:before { transform: translateX(18px); }
-        .switch-label { font-size: 12px; color: #8696a0; margin-right: 10px; }
+    /* Левая колонка (маленькие карточки) */
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 200px;
+    }
 
-        #msg-in { flex: 1; padding: 9px 12px; border-radius: 8px; border: none; background: #2a3942; color: #d1d7db; outline: none; font-size: 15px; }
-        #send-btn { padding: 8px 12px; background: transparent; border: none; color: #8696a0; cursor: pointer; font-size: 20px; transition: color 0.2s; }
-        #send-btn:hover { color: #00a884; }
+    /* Стиль для серых карточек */
+    .card {
+        background-color: #2d2d35; /* Цвет панелей Roblox */
+        border: 2px solid #4a4a55;
+        border-radius: 5px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
 
-    </style>
+    /* Большая панель справа */
+    .main-panel {
+        width: 450px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Заголовки и тексты */
+    h2 { margin: 0 0 15px 0; font-size: 24px; font-weight: normal; }
+    .stat-value { font-size: 32px; font-weight: bold; margin: 5px 0; }
+    .highlight { color: #aaddff; } /* Голубоватый оттенок цифр */
+
+    /* Список дебаффов */
+    .debuff-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        background: rgba(0,0,0,0.2);
+        padding: 8px;
+        border-radius: 4px;
+    }
+
+    .debuff-name {
+        font-size: 20px;
+        color: #44ff44; /* Ярко-зеленый текст */
+        font-weight: bold;
+    }
+
+    /* Кнопки статусов (Красные) */
+    .status-badge {
+        background-color: #cc0000;
+        color: black;
+        font-weight: bold;
+        padding: 5px 15px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-size: 14px;
+        min-width: 100px;
+        text-align: center;
+    }
+    
+    .status-badge.green {
+        background-color: #00cc00;
+    }
+
+</style>
 </head>
 <body>
 
-<div id="header">
-    <div style="display:flex; align-items:center">
-        <span id="status">SQUAD <span class="online">• Online</span></span>
+<div class="game-ui">
+    <!-- Левая колонка со статистикой -->
+    <div class="sidebar">
+        <div class="card">
+            <div>Уровень коррупции:</div>
+            <div class="stat-value highlight">98.5%</div>
+        </div>
+        
+        <div class="card">
+            <div>Активные трещины:</div>
+            <div class="stat-value highlight">6</div>
+        </div>
+
+        <div class="card" style="border-color: #00ff00;">
+            <div style="color: #00ff00; font-weight: bold;">POISON SPORES</div>
+            <div class="status-badge green" style="margin-top: 5px;">Не обнаружено</div>
+        </div>
     </div>
-    <input type="text" id="ngrok-url" placeholder="Ngrok URL">
+
+    <!-- Правая панель с дебаффами -->
+    <div class="card main-panel">
+        <h2>Статус дебаффа</h2>
+        
+        <div class="debuff-row">
+            <span class="debuff-name">Голодный олень</span>
+            <span class="status-badge">Обнаружено</span>
+        </div>
+
+        <div class="debuff-row">
+            <span class="debuff-name">Пассивное исцеление</span>
+            <span class="status-badge">PREVENTED</span>
+        </div>
+
+        <div class="debuff-row">
+            <span class="debuff-name">Волны культа</span>
+            <span class="status-badge">EXTREME</span>
+        </div>
+        
+        <div class="debuff-row">
+            <div style="display:flex; flex-direction:column;">
+                 <span class="debuff-name" style="font-size:16px;">Споры гниения</span>
+                 <span style="font-size:12px; color:#aaa;">(Порча еды)</span>
+            </div>
+            <span class="status-badge">Обнаружено</span>
+        </div>
+    </div>
 </div>
 
-<div id="chat"></div>
-
-<div id="input-area">
-    <span class="switch-label">Auto Chat</span>
-    <label class="switch">
-        <input type="checkbox" id="auto-toggle" onchange="toggleAuto()">
-        <span class="slider"></span>
-    </label>
-    
-    <input type="text" id="msg-in" placeholder="Введите сообщение" onkeypress="if(event.key==='Enter') send()">
-    <button id="send-btn" onclick="send()">➤</button>
-</div>
-
-<script>
-    document.getElementById('ngrok-url').value = localStorage.getItem('ngrok_url') || '';
-    
-    let audioQueue = [];
-    let isPlaying = false;
-    let isAuto = false;
-    let isWaiting = false; // Чтобы не спамить запросами
-
-    function playAudio() {
-        if (!audioQueue.length) { 
-            isPlaying = false; 
-            // Если включен авто-режим и очередь пуста -> просим новое сообщение
-            if (isAuto && !isWaiting) requestAuto();
-            return; 
-        }
-        isPlaying = true;
-        let audio = audioQueue.shift();
-        audio.play().catch(e => {
-            console.log("Audio play error", e);
-            playAudio(); // Skip error
-        });
-        audio.onended = playAudio;
-    }
-
-    async function requestAuto() {
-        if (!isAuto) return;
-        isWaiting = true;
-        
-        // Случайная задержка "на подумать" (2-4 секунды)
-        await new Promise(r => setTimeout(r, Math.random() * 2000 + 2000));
-        
-        if (!isAuto) { isWaiting = false; return; } // Если выключили пока ждали
-
-        await request('/auto_chat');
-        isWaiting = false;
-    }
-
-    async function request(endpoint, body = {}) {
-        let url = document.getElementById('ngrok-url').value.replace(//$/, '');
-        localStorage.setItem('ngrok_url', url);
-        
-        try {
-            let res = await fetch(`${url}${endpoint}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            });
-            let data = await res.json();
-            
-            if(data.responses) {
-                for(let r of data.responses) {
-                    let div = document.createElement('div');
-                    div.className = 'msg bot';
-                    div.innerHTML = `<span class="name ${r.character}">${r.character}</span>${r.text}`;
-                    document.getElementById('chat').appendChild(div);
-                    document.getElementById('chat').scrollTop = 99999;
-                    
-                    let audio = new Audio(`${url}${r.audio_url}`);
-                    audioQueue.push(audio);
-                    if(!isPlaying) playAudio();
-                }
-            }
-        } catch(e) { console.error(e); isWaiting = false; }
-    }
-
-    function send() {
-        // Если пишем сами, авто-режим лучше временно стопнуть или оставить
-        // Логичнее оставить, боты ответят и продолжат болтать
-        let txt = document.getElementById('msg-in').value.trim();
-        if(!txt) return;
-        document.getElementById('chat').innerHTML += `<div class="msg user">${txt}</div>`;
-        document.getElementById('msg-in').value = '';
-        document.getElementById('chat').scrollTop = 99999;
-        request('/chat', {text: txt});
-    }
-
-    function toggleAuto() {
-        isAuto = document.getElementById('auto-toggle').checked;
-        if (isAuto && !isPlaying && !isWaiting) {
-            requestAuto();
-        }
-    }
-</script>
 </body>
 </html>
