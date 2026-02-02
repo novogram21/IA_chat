@@ -3,179 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Voice Chat (HF Space)</title>
+    <title>SQUAD AUTO</title>
     <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        #chat-container {
-            width: 90%;
-            max-width: 600px;
-            height: 70vh;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            padding: 20px;
-            overflow-y: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-        }
-        .message {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-        .message.user {
-            background-color: #2b5c8a;
-            align-self: flex-end;
-            margin-left: auto;
-            text-align: right;
-        }
-        .message.bot {
-            background-color: #2e7d32;
-            align-self: flex-start;
-            margin-right: auto;
-        }
-        .char-name {
-            font-weight: bold;
-            font-size: 0.8em;
-            margin-bottom: 3px;
-            display: block;
-            color: #aaa;
-        }
-        #controls {
-            display: flex;
-            gap: 10px;
-            width: 90%;
-            max-width: 600px;
-        }
-        input[type="text"] {
-            flex-grow: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 5px;
-            background-color: #333;
-            color: white;
-            font-size: 16px;
-        }
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        #send-btn { background-color: #007bff; color: white; }
-        #send-btn:hover { background-color: #0056b3; }
-        #auto-btn { background-color: #dc3545; color: white; }
-        #auto-btn:hover { background-color: #a71d2a; }
+        body { background: #111b21; color: #e9edef; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
         
-        /* Индикатор загрузки */
-        .loading { opacity: 0.5; pointer-events: none; }
+        /* Header */
+        #header { padding: 10px 16px; background: #202c33; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a3942; }
+        #status { font-size: 13px; color: #8696a0; }
+        .online { color: #25d366; font-weight: bold; }
+        
+        /* Config Input (Hidden by default or small) */
+        #ngrok-url { background: #2a3942; border: 1px solid #374045; color: #8696a0; padding: 4px 8px; border-radius: 4px; width: 150px; font-size: 11px; }
+
+        /* Chat Area */
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); opacity: 0.95; }
+        
+        .msg { max-width: 65%; padding: 6px 9px; border-radius: 8px; font-size: 14.2px; line-height: 19px; position: relative; box-shadow: 0 1px 0.5px rgba(11,20,26,.13); word-wrap: break-word; }
+        .user { align-self: flex-end; background: #005c4b; color: #e9edef; border-radius: 8px 0 8px 8px; }
+        .bot { align-self: flex-start; background: #202c33; color: #e9edef; border-radius: 0 8px 8px 8px; }
+        
+        .name { font-size: 12.5px; font-weight: 500; margin-bottom: 2px; display: block; line-height: 15px; }
+        .Max { color: #f25c54; } .Liza { color: #ff70a6; } .Dan { color: #70d6ff; } .Vika { color: #e7c6ff; }
+
+        /* Controls */
+        #input-area { padding: 10px 16px; background: #202c33; display: flex; gap: 10px; align-items: center; }
+        
+        /* Switch */
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin-right: 10px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374045; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #00a884; }
+        input:checked + .slider:before { transform: translateX(18px); }
+        .switch-label { font-size: 12px; color: #8696a0; margin-right: 10px; }
+
+        #msg-in { flex: 1; padding: 9px 12px; border-radius: 8px; border: none; background: #2a3942; color: #d1d7db; outline: none; font-size: 15px; }
+        #send-btn { padding: 8px 12px; background: transparent; border: none; color: #8696a0; cursor: pointer; font-size: 20px; transition: color 0.2s; }
+        #send-btn:hover { color: #00a884; }
+
     </style>
 </head>
 <body>
 
-    <div id="chat-container"></div>
-
-    <div id="controls">
-        <input type="text" id="user-input" placeholder="Напишите сообщение (например: Привет, Папич!)">
-        <button id="send-btn">Отправить</button>
-        <button id="auto-btn">Авто-диалог</button>
+<div id="header">
+    <div style="display:flex; align-items:center">
+        <span id="status">SQUAD <span class="online">• Online</span></span>
     </div>
+    <input type="text" id="ngrok-url" placeholder="Ngrok URL">
+</div>
 
-    <script>
-        // ВАША ССЫЛКА НА СЕРВЕР HUGGING FACE
-        // Важно: без слеша в конце
-        const API_URL = "https://bizneslife-voicebot.hf.space"; 
+<div id="chat"></div>
 
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const autoBtn = document.getElementById('auto-btn');
+<div id="input-area">
+    <span class="switch-label">Auto Chat</span>
+    <label class="switch">
+        <input type="checkbox" id="auto-toggle" onchange="toggleAuto()">
+        <span class="slider"></span>
+    </label>
+    
+    <input type="text" id="msg-in" placeholder="Введите сообщение" onkeypress="if(event.key==='Enter') send()">
+    <button id="send-btn" onclick="send()">➤</button>
+</div>
 
-        // Функция отправки сообщения
-        async function sendMessage(text, isAuto = false) {
-            if (!text && !isAuto) return;
+<script>
+    document.getElementById('ngrok-url').value = localStorage.getItem('ngrok_url') || '';
+    
+    let audioQueue = [];
+    let isPlaying = false;
+    let isAuto = false;
+    let isWaiting = false; // Чтобы не спамить запросами
 
-            if (!isAuto) {
-                addMessage("Вы", text, "user");
-                userInput.value = "";
-            }
-
-            setLoading(true);
-
-            try {
-                const endpoint = isAuto ? "/auto_chat" : "/chat";
-                const response = await fetch(`${API_URL}${endpoint}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: text })
-                });
-
-                if (!response.ok) throw new Error("Ошибка сервера");
-
-                const data = await response.json();
-                
-                // Обрабатываем ответы ботов
-                for (const item of data.responses) {
-                    addMessage(item.character, item.text, "bot");
-                    
-                    // Воспроизводим аудио
-                    if (item.audio_url) {
-                        // Hugging Face требует полный путь, если сервер возвращает относительный
-                        const audioLink = item.audio_url.startsWith("http") 
-                            ? item.audio_url 
-                            : `${API_URL}${item.audio_url}`;
-                            
-                        const audio = new Audio(audioLink);
-                        audio.play().catch(e => console.error("Ошибка аудио:", e));
-                    }
-                }
-
-            } catch (error) {
-                console.error(error);
-                addMessage("System", "Ошибка соединения с сервером Hugging Face. Проверьте консоль.", "bot");
-            } finally {
-                setLoading(false);
-            }
+    function playAudio() {
+        if (!audioQueue.length) { 
+            isPlaying = false; 
+            // Если включен авто-режим и очередь пуста -> просим новое сообщение
+            if (isAuto && !isWaiting) requestAuto();
+            return; 
         }
-
-        function addMessage(name, text, type) {
-            const div = document.createElement('div');
-            div.className = `message ${type}`;
-            div.innerHTML = `<span class="char-name">${name}</span>${text}`;
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function setLoading(isLoading) {
-            if (isLoading) {
-                sendBtn.classList.add("loading");
-                sendBtn.textContent = "...";
-            } else {
-                sendBtn.classList.remove("loading");
-                sendBtn.textContent = "Отправить";
-            }
-        }
-
-        sendBtn.addEventListener('click', () => sendMessage(userInput.value));
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage(userInput.value);
+        isPlaying = true;
+        let audio = audioQueue.shift();
+        audio.play().catch(e => {
+            console.log("Audio play error", e);
+            playAudio(); // Skip error
         });
-        
-        autoBtn.addEventListener('click', () => sendMessage("", true));
+        audio.onended = playAudio;
+    }
 
-    </script>
+    async function requestAuto() {
+        if (!isAuto) return;
+        isWaiting = true;
+        
+        // Случайная задержка "на подумать" (2-4 секунды)
+        await new Promise(r => setTimeout(r, Math.random() * 2000 + 2000));
+        
+        if (!isAuto) { isWaiting = false; return; } // Если выключили пока ждали
+
+        await request('/auto_chat');
+        isWaiting = false;
+    }
+
+    async function request(endpoint, body = {}) {
+        let url = document.getElementById('ngrok-url').value.replace(//$/, '');
+        localStorage.setItem('ngrok_url', url);
+        
+        try {
+            let res = await fetch(`${url}${endpoint}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            let data = await res.json();
+            
+            if(data.responses) {
+                for(let r of data.responses) {
+                    let div = document.createElement('div');
+                    div.className = 'msg bot';
+                    div.innerHTML = `<span class="name ${r.character}">${r.character}</span>${r.text}`;
+                    document.getElementById('chat').appendChild(div);
+                    document.getElementById('chat').scrollTop = 99999;
+                    
+                    let audio = new Audio(`${url}${r.audio_url}`);
+                    audioQueue.push(audio);
+                    if(!isPlaying) playAudio();
+                }
+            }
+        } catch(e) { console.error(e); isWaiting = false; }
+    }
+
+    function send() {
+        // Если пишем сами, авто-режим лучше временно стопнуть или оставить
+        // Логичнее оставить, боты ответят и продолжат болтать
+        let txt = document.getElementById('msg-in').value.trim();
+        if(!txt) return;
+        document.getElementById('chat').innerHTML += `<div class="msg user">${txt}</div>`;
+        document.getElementById('msg-in').value = '';
+        document.getElementById('chat').scrollTop = 99999;
+        request('/chat', {text: txt});
+    }
+
+    function toggleAuto() {
+        isAuto = document.getElementById('auto-toggle').checked;
+        if (isAuto && !isPlaying && !isWaiting) {
+            requestAuto();
+        }
+    }
+</script>
 </body>
 </html>
